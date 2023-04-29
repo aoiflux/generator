@@ -1,6 +1,6 @@
 module generator
 
-go 1.19
+go 1.20
 
 require (
 	github.com/abema/go-mp4 v0.8.0
