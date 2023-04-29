@@ -3,7 +3,7 @@ module generator
 go 1.20
 
 require (
-	github.com/abema/go-mp4 v0.8.0
+	github.com/abema/go-mp4 v0.10.1
 	github.com/gingfrederik/docx v0.0.1
 	github.com/jung-kurt/gofpdf v1.16.2
 )
