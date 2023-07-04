@@ -12,7 +12,7 @@ import (
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println("Use: generator <path> <limit in numbers> [sub folder depth]")
+		fmt.Println("Use: fsagen <path> <limit in numbers> [sub folder depth]")
 		return
 	}
 
