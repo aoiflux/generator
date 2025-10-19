@@ -1,0 +1,26 @@
+start: "2021-11-01T10:00:00Z"
+actors:
+  - name: winuser
+    base: users/winuser
+
+steps:
+  - actor: winuser
+    offset: 0s
+    actions:
+      - action: create
+        path: downloads/installer.exe
+        content_len: 256
+
+  # Add ADS streams and Mark-of-the-Web (Windows only)
+  - actor: winuser
+    offset: 5m
+    actions:
+      - action: ads
+        path: downloads/installer.exe
+        stream: Note
+        content: "Downloaded by ${ACTOR}"
+      - action: motw
+        path: downloads/installer.exe
+        zone_id: 3
+        host_url: "https://example.com/downloads/installer.exe"
+        referrer_url: "https://example.com/"

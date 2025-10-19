@@ -1,0 +1,35 @@
+start: "2021-09-15T10:00:00Z"
+actors:
+  - name: insider
+    base: users/bob
+
+steps:
+  # Create emails and images, then bundle in an archive
+  - actor: insider
+    offset: 0s
+    actions:
+      - action: create
+        type: dir
+        path: mail
+      - action: create
+        path: mail/msg-${SEQ}.eml
+        content_len: 400
+      - action: create
+        path: media/pic-${SEQ}.jpg
+        content_len: 256
+
+  - actor: insider
+    offset: 20m
+    actions:
+      - action: create
+        path: bundles/bundle.zip
+        content_len: 2048
+
+  # Clean up originals to look like staging/exfil
+  - actor: insider
+    offset: 30m
+    actions:
+      - action: delete
+        path: mail/msg-${SEQ}.eml
+      - action: delete
+        path: media/pic-${SEQ}.jpg

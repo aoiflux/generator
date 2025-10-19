@@ -1,0 +1,39 @@
+start: "2021-07-01T00:00:00Z"
+actors:
+  - name: attacker
+    base: systems/server01
+
+steps:
+  # Legitimate baseline log stream
+  - actor: attacker
+    offset: 0s
+    actions:
+      - action: create
+        path: var/log/app.jsonl
+        content: ''
+      - action: append
+        path: var/log/app.jsonl
+        content: '{"ts":"${DATE:2006-01-02T15:04:05Z07:00}","level":"info","msg":"service start"}\n'
+
+  # Tampering: inject fake entries, then backdate file
+  - actor: attacker
+    offset: 30m
+    every: 5m
+    repeat: 3
+    actions:
+      - action: append
+        path: var/log/app.jsonl
+        content: '{"ts":"${DATE:2006-01-02T15:04:05Z07:00}","level":"warn","user":"${RND:6}","msg":"unexpected input"}\n'
+      - action: mace
+        path: var/log/app.jsonl
+        atime: "2021-06-15T12:00:00Z"
+        mtime: "2021-06-15T12:00:00Z"
+
+  # Cleanup: delete the log after a period
+  - actor: attacker
+    offset: 2h
+    actions:
+      - action: delete
+        path: var/log/app.jsonl
+        atime: "2021-06-01T00:00:00Z"
+        mtime: "2021-06-01T00:00:00Z"

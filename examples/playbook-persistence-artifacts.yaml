@@ -1,0 +1,39 @@
+start: "2021-08-10T08:00:00Z"
+actors:
+  - name: foeman
+    base: systems/workstation01
+
+steps:
+  # Drop files in a startup-like folder (artifacts only, not real startup)
+  - actor: foeman
+    offset: 0s
+    actions:
+      - action: create
+        type: dir
+        path: Users/Public/Startup
+      - action: create
+        path: Users/Public/Startup/helper.bat
+        content: 'echo run ${ACTOR} ${DATE:2006-01-02}\r\n'
+      - action: create
+        path: Users/Public/Startup/readme.md
+        content: '# Note ${ACTOR}\nThis system has been modified.'
+
+  # Fake registry export that would suggest persistence
+  - actor: foeman
+    offset: 5m
+    actions:
+      - action: create
+        path: Artifacts/persistence.reg
+        content: |
+          Windows Registry Editor Version 5.00
+          [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run]
+          "helper"="C:\\Users\\Public\\Startup\\helper.bat"
+
+  # Timestamp skew on artifacts dir
+  - actor: foeman
+    offset: 12m
+    actions:
+      - action: mace
+        path: Artifacts
+        atime: "2020-12-01T09:00:00Z"
+        mtime: "2020-12-01T09:00:00Z"

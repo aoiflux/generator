@@ -1,0 +1,35 @@
+operations:
+  - action: create
+    path: docs/readme
+    ext: .txt
+    content: "Deterministic content v1"
+    atime: "2021-01-01T10:00:00Z"
+    mtime: "2021-01-01T10:00:00Z"
+
+  - action: update
+    path: docs/readme.txt
+    content_len: 128
+    mtime: "2021-02-01T10:00:00Z"
+
+  - action: mace
+    path: docs
+    atime: "2021-03-01T10:00:00Z"
+    mtime: "2021-03-01T10:00:00Z"
+
+  - action: create
+    type: dir
+    path: media/videos/
+
+  - action: create
+    path: media/videos/sample.mp4
+    content_len: 256
+    mtime: "2021-04-01T12:00:00Z"
+
+  - action: rename
+    path: media/videos/sample.mp4
+    new_path: media/videos/sample-renamed.mp4
+
+  - action: delete
+    path: docs/readme.txt
+    atime: "2021-05-01T12:00:00Z" # optional: update parent dir times post-delete
+    mtime: "2021-05-01T12:05:00Z"

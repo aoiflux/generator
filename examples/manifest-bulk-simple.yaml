@@ -1,0 +1,72 @@
+operations:
+  # Simple manifest for quick bulk file generation
+  # Generate a variety of file types in structured directories
+
+  - action: create
+    type: dir
+    path: documents
+
+  - action: create
+    type: dir
+    path: logs
+
+  - action: create
+    type: dir
+    path: archives
+
+  - action: create
+    type: dir
+    path: media
+
+  # Documents
+  - action: create
+    path: documents/report.txt
+    content_len: 512
+
+  - action: create
+    path: documents/data.csv
+    content_len: 256
+
+  - action: create
+    path: documents/config.json
+    content_len: 128
+
+  - action: create
+    path: documents/readme.md
+    content_len: 256
+
+  # Logs
+  - action: create
+    path: logs/app.log
+    content_len: 1024
+
+  - action: create
+    path: logs/access.jsonl
+    content_len: 512
+
+  - action: create
+    path: logs/system.syslog
+    content_len: 768
+
+  # Archives
+  - action: create
+    path: archives/backup.zip
+    content_len: 2048
+
+  # Media
+  - action: create
+    path: media/image.png
+    content_len: 512
+
+  - action: create
+    path: media/video.mp4
+    content_len: 1024
+
+  # Windows artifacts
+  - action: create
+    path: artifacts/settings.reg
+    content_len: 256
+
+  - action: create
+    path: artifacts/tool.exe
+    content_len: 512

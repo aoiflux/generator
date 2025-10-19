@@ -1,0 +1,36 @@
+start: "2021-10-10T00:00:00Z"
+actors:
+  - name: operator
+    base: systems/web01
+
+steps:
+  - actor: operator
+    offset: 0s
+    actions:
+      - action: create
+        path: var/log/access.log
+        content: ''
+      - action: append
+        path: var/log/access.log
+        content: '2021-10-10T00:00:00Z GET /index.html 200\n'
+
+  # Rotate the log (move to .1) and continue logging
+  - actor: operator
+    offset: 15m
+    actions:
+      - action: rotate
+        path: var/log/access.log
+        new_path: var/log/access.log.1
+      - action: append
+        path: var/log/access.log
+        content: '2021-10-10T00:15:10Z GET /home 200\n'
+
+  # Truncate the active log (simulate log cleanup)
+  - actor: operator
+    offset: 30m
+    actions:
+      - action: truncate
+        path: var/log/access.log
+      - action: append
+        path: var/log/access.log
+        content: '2021-10-10T00:30:05Z GET /login 302\n'

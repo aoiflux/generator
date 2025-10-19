@@ -1,0 +1,36 @@
+start: "2021-01-01T09:00:00Z"
+actors:
+  - name: alice
+    base: users/alice
+  - name: bob
+    base: users/bob
+
+steps:
+  - actor: alice
+    offset: 0s
+    every: 15m
+    repeat: 2
+    actions:
+      - action: create
+        path: docs/report-${SEQ}.txt
+        content: "Quarterly report ${SEQ} - ${RND:16}"
+        content_len: 0
+        offset: 0s
+      - action: update
+        path: docs/report-${SEQ}.txt
+        content_len: 64
+        offset: 5m
+
+  - actor: bob
+    offset: 30m
+    actions:
+      - action: create
+        type: dir
+        path: media/photos
+      - action: create
+        path: media/photos/pic-${SEQ}.jpg
+        content_len: 256
+        offset: 2m
+      - action: delete
+        path: media/photos/pic-${SEQ}.jpg
+        offset: 10m

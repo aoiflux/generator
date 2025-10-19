@@ -1,0 +1,52 @@
+start: "2021-06-01T09:00:00Z"
+actors:
+  - name: intruder
+    base: users/alice
+
+steps:
+  # Stage documents in user folder
+  - actor: intruder
+    offset: 0s
+    actions:
+      - action: create
+        path: docs/quarterly.csv
+        content_len: 512
+      - action: create
+        path: docs/customers.csv
+        content_len: 512
+      - action: create
+        type: dir
+        path: staging
+
+  # Move staged documents to staging folder (rename), then create an archive
+  - actor: intruder
+    offset: 10m
+    actions:
+      - action: rename
+        path: docs/quarterly.csv
+        new_path: staging/quarterly.csv
+      - action: rename
+        path: docs/customers.csv
+        new_path: staging/customers.csv
+      - action: create
+        path: staging/data.zip
+        content_len: 1024
+
+  # Append exfiltration log entries
+  - actor: intruder
+    offset: 15m
+    every: 2m
+    repeat: 3
+    actions:
+      - action: append
+        path: logs/exfil.log
+        content: "${DATE:2006-01-02T15:04:05Z07:00} ${ACTOR} staged artifacts"
+
+  # Backdate the staging directory (anti-forensics MACE skew)
+  - actor: intruder
+    offset: 25m
+    actions:
+      - action: mace
+        path: staging
+        atime: "2021-05-01T10:00:00Z"
+        mtime: "2021-05-01T10:00:00Z"
