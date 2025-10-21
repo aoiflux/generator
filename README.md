@@ -1,12 +1,13 @@
 # File System Artifacts Generator (fsagen)
 
-Deterministic generator for creating diverse file-system artifacts to test forensic tools (Autopsy, EnCase, FTK, etc.). Uses YAML manifests for simple operations and playbooks for complex modus operandi simulation.
+Deterministic generator for creating diverse file-system artifacts to test forensic tools (Autopsy, EnCase, FTK, etc.). Use YAML manifests for simple operations, playbooks for complex modus operandi simulation, or the bulk generator for a quick synthetic corpus with no YAML required.
 
 ## Features
 
 - Deterministic output with `--seed`
 - Manifest mode: simple, declarative file operations (create/update/append/delete/mace/rename/truncate/rotate/ads/motw)
 - Playbook mode: complex timelines with actors, timed steps, and templating
+- Bulk mode: super-simple synthetic corpus generation with `--bulk` and `--depth`
 - Extensive file type support: documents, logs, archives, media, emails, Windows artifacts
 - MACE (atime/mtime) timestamp control
 - Windows-specific: NTFS ADS and Mark-of-the-Web (MoTW)
@@ -21,7 +22,7 @@ go build -v -o fsagen.exe
 
 ## Usage
 
-fsagen requires either a manifest or playbook file to generate artifacts:
+fsagen can generate artifacts using a manifest, a playbook, or the bulk generator:
 
 ```pwsh
 fsagen [OPTIONS] <output-path>
@@ -31,6 +32,8 @@ fsagen [OPTIONS] <output-path>
 - `--seed N` - PRNG seed for deterministic generation (default: 1)
 - `--manifest FILE` - Execute a YAML manifest (simple file operations)
 - `--playbook FILE` - Execute a YAML playbook (complex modus operandi)
+- `--bulk N` - Super-simple bulk generation: N items per level (no YAML)
+- `--depth D` - Bulk generation depth (default: 1)
 - `--timeline FILE` - Generate forensic timeline after execution (formats: csv, txt, bodyfile, macb)
 
 **Examples:**
@@ -48,6 +51,11 @@ fsagen --seed 100 --playbook examples/playbook-adversary-data-theft.yaml ./crime
 Generate artifacts with forensic timeline:
 ```pwsh
 fsagen --seed 42 --playbook examples/playbook-comprehensive-ransomware.yaml --timeline timeline.csv ./output
+```
+
+Quick synthetic corpus with bulk generator (no YAML):
+```pwsh
+fsagen --seed 7 --bulk 3 --depth 2 ./quick-bulk
 ```
 
 ## Manifest schema
@@ -226,3 +234,28 @@ fsagen --playbook examples/playbook-insider-threat-exfil.yaml --timeline investi
 ```
 
 See `examples/TIMELINE_EXAMPLES.md` for more timeline generation examples.
+
+## Bulk Generation (no YAML)
+
+Use the bulk generator when you need a fast, synthetic corpus without describing a scenario:
+
+```pwsh
+# N items per level, depth D directories deep
+fsagen --seed 7 --bulk 3 --depth 2 ./quick-bulk
+
+# You can also emit a timeline for bulk output
+fsagen --seed 7 --bulk 3 --depth 2 --timeline timeline.csv ./quick-bulk
+```
+
+What it does:
+- Creates a directory fan-out up to `--depth` with `--bulk` sub-branches per level
+- Populates each level with many file types (txt, docx, png, pdf, mp4, csv, json, xml, html, log, reg, zip, exe, jsonl, syslog, md, eml, mbox)
+- Deterministic names and contents from `--seed`
+
+Intended use:
+- Quickly produce a sizeable, diverse dataset for tool demos, performance tests, or classroom exercises
+- Warm-up data for timeline/report pipelines when a complex MO isn’t needed
+
+Notes:
+- Output size grows quickly with `--bulk` and `--depth`. Start small (e.g., `--bulk 2 --depth 1` or `--bulk 3 --depth 2`).
+- Bulk mode is structure/content focused; if you need precise timelines, actors, or conditions, prefer Playbooks.

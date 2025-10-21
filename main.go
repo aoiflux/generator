@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	libgenpkg "generator/libgen"
 	manifestpkg "generator/manifest"
 	playbookpkg "generator/playbook"
 	timelinepkg "generator/timeline"
@@ -17,6 +18,9 @@ func main() {
 	seed := flag.Int64("seed", 1, "PRNG seed for deterministic generation")
 	manifestPath := flag.String("manifest", "", "Path to a YAML manifest that defines specific artifacts and actions")
 	playbookPath := flag.String("playbook", "", "Path to a YAML playbook that describes a modus operandi (high-level timeline)")
+	// Super-simple bulk generation (no manifest/playbook): generate a bunch of files
+	bulkLimit := flag.Int("bulk", 0, "Bulk generation: number of items per level (no manifest/playbook)")
+	bulkDepth := flag.Int("depth", 1, "Bulk generation: directory depth (default 1)")
 	timelineOutput := flag.String("timeline", "", "Generate forensic timeline after execution (formats: csv, txt, bodyfile, macb)")
 	flag.Parse()
 
@@ -33,8 +37,8 @@ func main() {
 	absPath, err := getRootPath(path)
 	handle(err)
 
-	// Require either manifest or playbook
-	if *playbookPath == "" && *manifestPath == "" {
+	// Require either playbook, manifest, or bulk
+	if *playbookPath == "" && *manifestPath == "" && *bulkLimit == 0 {
 		fmt.Println("Error: either --manifest or --playbook is required")
 		printUsage()
 		os.Exit(1)
@@ -48,6 +52,14 @@ func main() {
 		}
 	} else if *manifestPath != "" {
 		if err := manifestpkg.ExecuteManifest(absPath, *manifestPath); err != nil {
+			handle(err)
+		}
+	} else if *bulkLimit > 0 {
+		// Bulk generation mode
+		if *bulkDepth < 1 {
+			*bulkDepth = 1
+		}
+		if err := libgenpkg.GenerateFiles(absPath, int64(*bulkLimit), int64(*bulkDepth)); err != nil {
 			handle(err)
 		}
 	}
@@ -74,6 +86,8 @@ func printUsage() {
 	fmt.Println("  --seed N           PRNG seed for deterministic generation (default: 1)")
 	fmt.Println("  --manifest FILE    Execute a YAML manifest (simple file operations)")
 	fmt.Println("  --playbook FILE    Execute a YAML playbook (complex modus operandi)")
+	fmt.Println("  --bulk N           Super-simple bulk generation: N items per level (no manifest/playbook)")
+	fmt.Println("  --depth D          Bulk generation depth (default: 1)")
 	fmt.Println("  --timeline FILE    Generate forensic timeline after execution")
 	fmt.Println()
 	fmt.Println("Timeline formats (detected by file extension):")
@@ -86,8 +100,9 @@ func printUsage() {
 	fmt.Println("  fsagen --seed 42 --manifest basic.yaml ./output")
 	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml ./crime-scene")
 	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml --timeline timeline.csv ./output")
+	fmt.Println("  fsagen --seed 7  --bulk 3 --depth 2 ./quick-bulk")
 	fmt.Println()
-	fmt.Println("Either --manifest or --playbook is required.")
+	fmt.Println("Either --manifest, --playbook, or --bulk is required.")
 }
 
 func generateTimeline(root string, outputPath string) error {
