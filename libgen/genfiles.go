@@ -24,31 +24,26 @@ func GenerateFiles(rootpath string, limit, depth int64) error {
 		return nil
 	}
 
-	var active int
-	err := make(chan error)
+	// Use buffered channel to prevent blocking
+	err := make(chan error, limit)
 
 	for index := int64(0); index < limit; index++ {
-		if active > constant.MaxThreadCount {
-			if <-err != nil {
-				return <-err
-			}
-			active--
-		}
-
 		pathfmt := fmt.Sprintf("%s_%d", util.GetRandomString(constant.FileNameLen), index)
 		path := filepath.Join(rootpath, pathfmt)
 
 		go populateFolder(path, limit, err)
-		active++
 
-		GenerateFiles(path, limit, depth-1)
+		// Recurse synchronously to maintain depth structure
+		if recErr := GenerateFiles(path, limit, depth-1); recErr != nil {
+			return recErr
+		}
 	}
 
-	for active > 0 {
-		if <-err != nil {
-			return <-err
+	// Collect results from all populateFolder calls
+	for index := int64(0); index < limit; index++ {
+		if e := <-err; e != nil {
+			return e
 		}
-		active--
 	}
 
 	return nil
@@ -58,79 +53,43 @@ func populateFolder(path string, limit int64, channeledErr chan error) {
 	ioerr := os.MkdirAll(path, os.ModePerm)
 	if ioerr != nil {
 		channeledErr <- ioerr
+		return
 	}
 
-	var active int
-	generr := make(chan error)
+	// Calculate total goroutines per iteration: 18 file types
+	totalPerIteration := int64(18)
+	totalGoroutines := limit * totalPerIteration
+
+	// Use buffered channel sized to hold all results to prevent blocking
+	generr := make(chan error, totalGoroutines)
 
 	for index := int64(0); index < limit; index++ {
-		if active > constant.MaxThreadCount {
-			if <-generr != nil {
-				channeledErr <- <-generr
-			}
-			active--
-		}
-
 		go generateTxt(path, generr)
-		active++
-
 		go generateDocx(path, generr)
-		active++
-
 		go generatePng(path, generr)
-		active++
-
 		go generatePdf(path, generr)
-		active++
-
 		go generateMp4(path, generr)
-		active++
-
 		go generateCsv(path, generr)
-		active++
-
 		go generateJson(path, generr)
-		active++
-
 		go generateXml(path, generr)
-		active++
-
 		go generateHtml(path, generr)
-		active++
-
 		go generateLog(path, generr)
-		active++
-
 		go generateReg(path, generr)
-		active++
-
 		go generateZip(path, generr)
-		active++
-
 		go generateExe(path, generr)
-		active++
-
 		go generateJsonl(path, generr)
-		active++
-
 		go generateSyslog(path, generr)
-		active++
-
 		go generateMarkdown(path, generr)
-		active++
-
 		go generateEml(path, generr)
-		active++
-
 		go generateMbox(path, generr)
-		active++
 	}
 
-	for active > 0 {
-		if <-generr != nil {
-			channeledErr <- <-generr
+	// Collect all results
+	for i := int64(0); i < totalGoroutines; i++ {
+		if err := <-generr; err != nil {
+			channeledErr <- err
+			return
 		}
-		active--
 	}
 
 	channeledErr <- nil

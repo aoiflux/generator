@@ -5,16 +5,19 @@ import (
 	"fmt"
 	manifestpkg "generator/manifest"
 	playbookpkg "generator/playbook"
+	timelinepkg "generator/timeline"
 	"generator/util"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
 	seed := flag.Int64("seed", 1, "PRNG seed for deterministic generation")
 	manifestPath := flag.String("manifest", "", "Path to a YAML manifest that defines specific artifacts and actions")
 	playbookPath := flag.String("playbook", "", "Path to a YAML playbook that describes a modus operandi (high-level timeline)")
+	timelineOutput := flag.String("timeline", "", "Generate forensic timeline after execution (formats: csv, txt, bodyfile, macb)")
 	flag.Parse()
 
 	args := flag.Args()
@@ -50,6 +53,16 @@ func main() {
 	}
 
 	fmt.Println("Done!")
+
+	// Generate timeline if requested
+	if *timelineOutput != "" {
+		fmt.Println("\nGenerating forensic timeline...")
+		if err := generateTimeline(absPath, *timelineOutput); err != nil {
+			fmt.Printf("Warning: timeline generation failed: %v\n", err)
+		} else {
+			fmt.Printf("Timeline written to: %s\n", *timelineOutput)
+		}
+	}
 }
 
 func printUsage() {
@@ -61,12 +74,52 @@ func printUsage() {
 	fmt.Println("  --seed N           PRNG seed for deterministic generation (default: 1)")
 	fmt.Println("  --manifest FILE    Execute a YAML manifest (simple file operations)")
 	fmt.Println("  --playbook FILE    Execute a YAML playbook (complex modus operandi)")
+	fmt.Println("  --timeline FILE    Generate forensic timeline after execution")
+	fmt.Println()
+	fmt.Println("Timeline formats (detected by file extension):")
+	fmt.Println("  .csv               CSV format with full metadata")
+	fmt.Println("  .txt               Human-readable text format")
+	fmt.Println("  .bodyfile          Bodyfile format (compatible with mactime)")
+	fmt.Println("  .macb              MACB timeline format")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  fsagen --seed 42 --manifest basic.yaml ./output")
 	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml ./crime-scene")
+	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml --timeline timeline.csv ./output")
 	fmt.Println()
 	fmt.Println("Either --manifest or --playbook is required.")
+}
+
+func generateTimeline(root string, outputPath string) error {
+	// Generate the timeline
+	tl, err := timelinepkg.Generate(root)
+	if err != nil {
+		return fmt.Errorf("generate timeline: %w", err)
+	}
+
+	// Create output file
+	f, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("create timeline file: %w", err)
+	}
+	defer f.Close()
+
+	// Determine format from file extension
+	ext := strings.ToLower(filepath.Ext(outputPath))
+
+	switch ext {
+	case ".csv":
+		return tl.WriteCSV(f)
+	case ".txt":
+		return tl.WriteTXT(f)
+	case ".bodyfile":
+		return tl.WriteBodyfile(f)
+	case ".macb":
+		return tl.WriteMACB(f)
+	default:
+		// Default to CSV if extension not recognized
+		return tl.WriteCSV(f)
+	}
 }
 
 func getRootPath(path string) (string, error) {

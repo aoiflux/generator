@@ -31,6 +31,7 @@ fsagen [OPTIONS] <output-path>
 - `--seed N` - PRNG seed for deterministic generation (default: 1)
 - `--manifest FILE` - Execute a YAML manifest (simple file operations)
 - `--playbook FILE` - Execute a YAML playbook (complex modus operandi)
+- `--timeline FILE` - Generate forensic timeline after execution (formats: csv, txt, bodyfile, macb)
 
 **Examples:**
 
@@ -42,6 +43,11 @@ fsagen --seed 42 --manifest examples/manifest-bulk-simple.yaml ./output
 Complex adversary simulation with playbook:
 ```pwsh
 fsagen --seed 100 --playbook examples/playbook-adversary-data-theft.yaml ./crime-scene
+```
+
+Generate artifacts with forensic timeline:
+```pwsh
+fsagen --seed 42 --playbook examples/playbook-comprehensive-ransomware.yaml --timeline timeline.csv ./output
 ```
 
 ## Manifest schema
@@ -67,24 +73,85 @@ YAML with a sequence of operations:
 
 YAML with a timeline and actors:
 
-- start: RFC3339 or "now"
-- actors: list of { name, base } to scope paths per actor
-- steps:
-	- actor: actor name
+- **start**: RFC3339 or "now"
+- **variables**: Global variables for templating (map of key-value pairs)
+- **actors**: List of { name, base, variables }
+	- name: Actor identifier
+	- base: Base directory for this actor's files
+	- variables: Actor-specific variables (override global variables)
+- **steps**: Timeline steps
+	- actor: Actor name
 	- offset: time.Duration from start for first occurrence (e.g., 5m, 2h)
-	- every: repeat interval (optional)
-	- repeat: number of occurrences (default 1)
-	- actions: list of operations like in manifest with extras:
+	- every: Repeat interval (optional)
+	- repeat: Number of occurrences (default 1)
+	- condition: Step-level conditional execution ("odd", "even", "first", "last")
+	- batch_count: Generate N files in this step (multiplies actions)
+	- actions: List of operations with extras:
 		- offset: time.Duration relative to the step occurrence
-		- templating in fields: `${SEQ}` (monotonic counter), `${RND:N}` for deterministic random strings of length N
+		- condition: Action-level conditional execution
+		- template: Predefined content template ("email", "log", "script", "doc")
+		- All standard manifest fields (action, path, content, etc.)
 
 Operations supported: `create|update|append|truncate|rotate|delete|mace|rename|ads|motw` (all operations work in both manifest and playbook). `ads` and `motw` are Windows-only. Timestamps are computed from the timeline unless explicitly provided in the action.
 
 **Playbook templating:**
 - `${SEQ}` - Monotonic sequence counter
-- `${RND:N}` - Deterministic random string of length N
-- `${DATE:layout}` - Current time formatted with Go layout
+- `${RND:N}` or `${RANDOM:N}` - Deterministic random string of length N
+- `${DATE:layout}` - Current time formatted with Go layout (e.g., `${DATE:2006-01-02T15:04:05Z07:00}`)
 - `${ACTOR}` - Current actor name
+- `${VAR:name}` - Variable substitution (from global or actor-specific variables)
+- `${UUID}` - Deterministic UUID based on sequence
+- `${IP}` - Deterministic IP address (192.168.x.x range)
+- `${HASH:N}` - Deterministic hash-like hex string of length N
+- `${BATCH}` - Current batch index (when using batch_count)
+- `${ITER}` - Current iteration index (when using repeat)
+
+**Advanced Playbook Features:**
+
+1. **Variables**: Define reusable values at global and actor scope
+```yaml
+variables:
+  campaign_id: "OP-2024-001"
+  target_org: "ACME Corp"
+actors:
+  - name: attacker
+    base: users/victim/Downloads
+    variables:
+      ip_addr: "192.0.2.42"
+```
+
+2. **Conditional Execution**: Control when steps/actions run
+```yaml
+steps:
+  - actor: malware
+    repeat: 10
+    condition: even  # Only runs on even iterations (0, 2, 4, ...)
+    actions:
+      - action: create
+        path: file-${ITER}.txt
+        condition: odd  # Further filtering at action level
+```
+
+3. **Batch Operations**: Generate multiple files in one step
+```yaml
+steps:
+  - actor: ransomware
+    batch_count: 100  # Creates 100 files
+    actions:
+      - action: create
+        path: encrypted-${BATCH}.locked
+        content_len: 2048
+```
+
+4. **Content Templates**: Use predefined realistic content
+```yaml
+actions:
+  - action: create
+    path: message.eml
+    template: email  # Generates realistic email structure
+```
+
+Available templates: `email`, `log`, `script`, `doc`
 
 **Example playbooks:**
 
@@ -95,6 +162,9 @@ Operations supported: `create|update|append|truncate|rotate|delete|mace|rename|a
 - `examples/playbook-email-and-archive.yaml` - Creates emails/images, archives, deletes originals
 - `examples/playbook-log-rotate-and-truncate.yaml` - Demonstrates log rotation and truncation
 - `examples/playbook-windows-ads-motw.yaml` - Adds NTFS ADS and Mark-of-the-Web (Windows-only)
+- `examples/playbook-comprehensive-ransomware.yaml` - **Advanced**: Full ransomware attack with variables, batching, conditions, and templates
+- `examples/playbook-insider-threat-exfil.yaml` - **Advanced**: 7-day insider threat scenario with repeated access patterns
+- `examples/playbook-malware-lifecycle.yaml` - **Advanced**: 48-hour malware infection lifecycle with beaconing and anti-forensics
 
 ## Notes on timestamps
 
@@ -117,3 +187,42 @@ The generator can create artifacts with proper structure for:
 - **Archives**: .zip
 - **Email**: .eml, .mbox
 - **Windows**: .reg, .exe, NTFS ADS, MoTW
+
+## Forensic Timeline Generation
+
+After generating artifacts, fsagen can automatically create forensic timelines for analysis:
+
+```pwsh
+fsagen --playbook scenario.yaml --timeline output.csv ./artifacts
+```
+
+**Timeline Formats:**
+
+- **CSV** (`.csv`): Structured data with all metadata (path, size, mode, timestamps, MD5, type, ADS)
+- **TXT** (`.txt`): Human-readable format with detailed file information
+- **Bodyfile** (`.bodyfile`): Compatible with The Sleuth Kit's mactime tool
+- **MACB** (`.macb`): Modified/Accessed/Changed/Birth timeline showing all timestamp events separately
+
+**Timeline Features:**
+
+- MD5 hash calculation for all files (except files > 100MB)
+- Full timestamp capture (access, modify, change/create times)
+- NTFS Alternate Data Stream detection (Windows)
+- Chronologically sorted by modification time
+- Deterministic output (same seed = same timeline)
+
+**Example workflows:**
+
+```pwsh
+# Generate ransomware scenario with CSV timeline
+fsagen --seed 999 --playbook examples/playbook-comprehensive-ransomware.yaml --timeline ransomware.csv ./scene
+
+# Create timeline compatible with mactime
+fsagen --playbook examples/playbook-malware-lifecycle.yaml --timeline evidence.bodyfile ./analysis
+mactime -b evidence.bodyfile -d > detailed-timeline.txt
+
+# Generate MACB timeline for temporal analysis
+fsagen --playbook examples/playbook-insider-threat-exfil.yaml --timeline investigation.macb ./case
+```
+
+See `examples/TIMELINE_EXAMPLES.md` for more timeline generation examples.

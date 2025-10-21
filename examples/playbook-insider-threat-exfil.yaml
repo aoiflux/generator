@@ -1,0 +1,131 @@
+start: "2024-06-01T08:00:00Z"
+
+variables:
+  employee_id: "EMP-45632"
+  project_code: "PROJ-ALPHA"
+
+actors:
+  - name: insider
+    base: users/jsmith
+    variables:
+      email: "jsmith@company.com"
+      workstation: "WS-1234"
+
+steps:
+  # Normal morning activity
+  - actor: insider
+    offset: 0s
+    batch_count: 5
+    actions:
+      - action: create
+        path: Documents/work-notes-${DATE:2006-01-02}.txt
+        template: doc
+
+  # Access sensitive project files (repeated over days)
+  - actor: insider
+    offset: 2h
+    every: 24h
+    repeat: 7
+    batch_count: 3
+    actions:
+      - action: create
+        path: Documents/${VAR:project_code}/accessed-${ITER}-${BATCH}.pdf
+        content_len: 16384
+      - action: append
+        path: .access-log.txt
+        content: "${DATE:2006-01-02T15:04:05Z07:00} ${VAR:employee_id} accessed ${VAR:project_code}/file-${BATCH}.pdf from ${VAR:workstation}\n"
+
+  # Create USB staging directory (day 3)
+  - actor: insider
+    offset: 72h
+    actions:
+      - action: create
+        type: dir
+        path: USB-STAGING
+      - action: create
+        path: USB-STAGING/.hidden-manifest.txt
+        content: "Staged for external transfer - ${DATE:2006-01-02}"
+
+  # Copy files to USB staging (selective)
+  - actor: insider
+    offset: 72h30m
+    batch_count: 15
+    actions:
+      - action: create
+        path: USB-STAGING/${VAR:project_code}-doc-${BATCH}.pdf
+        content_len: 8192
+        condition: odd
+      - action: create
+        path: USB-STAGING/customer-list-${BATCH}.xlsx
+        content_len: 4096
+        condition: even
+
+  # Compress for exfiltration
+  - actor: insider
+    offset: 73h
+    actions:
+      - action: create
+        path: USB-STAGING/backup-${DATE:20060102}.zip
+        content_len: 131072
+        mtime: "2024-05-15T10:00:00Z"
+
+  # Email artifacts (sending to personal email)
+  - actor: insider
+    offset: 74h
+    repeat: 3
+    every: 30m
+    actions:
+      - action: create
+        path: AppData/Local/Microsoft/Outlook/Sent-${SEQ}.eml
+        template: email
+      - action: create
+        path: Downloads/attachment-${UUID}.zip
+        content_len: 65536
+
+  # Cloud upload simulation
+  - actor: insider
+    offset: 76h
+    every: 5m
+    repeat: 10
+    actions:
+      - action: append
+        path: .cloud-sync.log
+        content: "${DATE:2006-01-02T15:04:05Z07:00} UPLOAD ${VAR:project_code}-chunk-${SEQ}.enc size=${HASH:16} dest=personal-cloud status=SUCCESS\n"
+
+  # Cover tracks - selective deletion
+  - actor: insider
+    offset: 80h
+    actions:
+      - action: delete
+        path: USB-STAGING/.hidden-manifest.txt
+      - action: delete
+        path: .access-log.txt
+      - action: truncate
+        path: .cloud-sync.log
+      - action: mace
+        path: USB-STAGING
+        mtime: "2024-01-01T00:00:00Z"
+        atime: "2024-01-01T00:00:00Z"
+
+  # Create decoy activity
+  - actor: insider
+    offset: 81h
+    batch_count: 20
+    actions:
+      - action: create
+        path: Documents/meeting-notes-${BATCH}.txt
+        template: doc
+      - action: create
+        path: Documents/presentation-${RND:8}.pptx
+        content_len: 2048
+
+  # Final cleanup before leaving
+  - actor: insider
+    offset: 168h
+    actions:
+      - action: delete
+        path: Downloads/attachment-${UUID}.zip
+      - action: create
+        path: Documents/resignation-letter.docx
+        content: "Two weeks notice - ${DATE:2006-01-02}"
+        mtime: "2024-06-08T09:00:00Z"
