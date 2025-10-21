@@ -218,6 +218,7 @@ fsagen --playbook scenario.yaml --timeline output.csv ./artifacts
 - NTFS Alternate Data Stream detection (Windows)
 - Chronologically sorted by modification time
 - Deterministic output (same seed = same timeline)
+- **Timeline-only mode**: Generate timelines from existing artifacts without regenerating them
 
 **Example workflows:**
 
@@ -231,7 +232,26 @@ mactime -b evidence.bodyfile -d > detailed-timeline.txt
 
 # Generate MACB timeline for temporal analysis
 fsagen --playbook examples/playbook-insider-threat-exfil.yaml --timeline investigation.macb ./case
+
+# Timeline-only mode: generate timeline from existing artifacts (no regeneration)
+fsagen --timeline existing-timeline.csv ./already-generated-folder
 ```
+
+**Timeline-only mode:**
+
+If you've already generated artifacts but forgot to create a timeline, you can generate one later without regenerating the artifacts:
+
+```pwsh
+# Generate timeline from existing folder
+fsagen --timeline my-timeline.csv ./existing-artifacts
+
+# Different formats
+fsagen --timeline analysis.txt ./crime-scene
+fsagen --timeline evidence.bodyfile ./investigation
+fsagen --timeline temporal.macb ./case-folder
+```
+
+This scans the folder, collects all file metadata, calculates MD5 hashes, and outputs the timeline in your chosen format—no artifact regeneration needed.
 
 See `examples/TIMELINE_EXAMPLES.md` for more timeline generation examples.
 

@@ -37,34 +37,42 @@ func main() {
 	absPath, err := getRootPath(path)
 	handle(err)
 
-	// Require either playbook, manifest, or bulk
-	if *playbookPath == "" && *manifestPath == "" && *bulkLimit == 0 {
-		fmt.Println("Error: either --manifest or --playbook is required")
-		printUsage()
-		os.Exit(1)
+	// Timeline-only mode: if only --timeline is specified, skip generation and just scan the folder
+	timelineOnly := *timelineOutput != "" && *playbookPath == "" && *manifestPath == "" && *bulkLimit == 0
+
+	if timelineOnly {
+		// Just generate timeline from existing artifacts
+		fmt.Printf("Scanning existing artifacts in %s...\n", absPath)
+	} else {
+		// Require either playbook, manifest, or bulk for generation
+		if *playbookPath == "" && *manifestPath == "" && *bulkLimit == 0 {
+			fmt.Println("Error: either --manifest, --playbook, or --bulk is required (or use --timeline alone for timeline-only mode)")
+			printUsage()
+			os.Exit(1)
+		}
+
+		fmt.Println("Generating artifacts...")
+
+		if *playbookPath != "" {
+			if err := playbookpkg.ExecutePlaybook(absPath, *playbookPath); err != nil {
+				handle(err)
+			}
+		} else if *manifestPath != "" {
+			if err := manifestpkg.ExecuteManifest(absPath, *manifestPath); err != nil {
+				handle(err)
+			}
+		} else if *bulkLimit > 0 {
+			// Bulk generation mode
+			if *bulkDepth < 1 {
+				*bulkDepth = 1
+			}
+			if err := libgenpkg.GenerateFiles(absPath, int64(*bulkLimit), int64(*bulkDepth)); err != nil {
+				handle(err)
+			}
+		}
+
+		fmt.Println("Done!")
 	}
-
-	fmt.Println("Generating artifacts...")
-
-	if *playbookPath != "" {
-		if err := playbookpkg.ExecutePlaybook(absPath, *playbookPath); err != nil {
-			handle(err)
-		}
-	} else if *manifestPath != "" {
-		if err := manifestpkg.ExecuteManifest(absPath, *manifestPath); err != nil {
-			handle(err)
-		}
-	} else if *bulkLimit > 0 {
-		// Bulk generation mode
-		if *bulkDepth < 1 {
-			*bulkDepth = 1
-		}
-		if err := libgenpkg.GenerateFiles(absPath, int64(*bulkLimit), int64(*bulkDepth)); err != nil {
-			handle(err)
-		}
-	}
-
-	fmt.Println("Done!")
 
 	// Generate timeline if requested
 	if *timelineOutput != "" {
@@ -90,6 +98,10 @@ func printUsage() {
 	fmt.Println("  --depth D          Bulk generation depth (default: 1)")
 	fmt.Println("  --timeline FILE    Generate forensic timeline after execution")
 	fmt.Println()
+	fmt.Println("Timeline-only mode:")
+	fmt.Println("  If --timeline is specified without --manifest/--playbook/--bulk, fsagen will")
+	fmt.Println("  scan the existing folder and generate a timeline without creating new artifacts.")
+	fmt.Println()
 	fmt.Println("Timeline formats (detected by file extension):")
 	fmt.Println("  .csv               CSV format with full metadata")
 	fmt.Println("  .txt               Human-readable text format")
@@ -102,7 +114,11 @@ func printUsage() {
 	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml --timeline timeline.csv ./output")
 	fmt.Println("  fsagen --seed 7  --bulk 3 --depth 2 ./quick-bulk")
 	fmt.Println()
-	fmt.Println("Either --manifest, --playbook, or --bulk is required.")
+	fmt.Println("Timeline-only mode (no artifact generation):")
+	fmt.Println("  fsagen --timeline timeline.csv ./existing-artifacts")
+	fmt.Println()
+	fmt.Println("Either --manifest, --playbook, or --bulk is required for artifact generation.")
+	fmt.Println("Use --timeline alone to generate a timeline from existing artifacts.")
 }
 
 func generateTimeline(root string, outputPath string) error {
