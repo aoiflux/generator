@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,7 +48,10 @@ func ExecuteManifest(root string, manifestPath string) error {
 	if err := yaml.Unmarshal(data, &m); err != nil {
 		return fmt.Errorf("parse manifest: %w", err)
 	}
-	return ExecuteOperations(root, m.operationsSequential())
+	// Apply simple templating to operations before execution
+	ops := m.operationsSequential()
+	ops = applyManifestTemplating(ops)
+	return ExecuteOperations(root, ops)
 }
 
 func (m Manifest) operationsSequential() []Operation {
@@ -62,6 +67,71 @@ func ExecuteOperations(root string, ops []Operation) error {
 		}
 	}
 	return nil
+}
+
+// --- Minimal templating support for Manifest ---
+// Supports: ${SEQ}, ${RND:N}, ${DATE:layout}
+var (
+	reSeqMan  = regexp.MustCompile(`\$\{SEQ\}`)
+	reRndMan  = regexp.MustCompile(`\$\{(RND|RANDOM)\:(\d+)\}`)
+	reDateMan = regexp.MustCompile(`\$\{DATE\:([^}]+)\}`)
+)
+
+// applyManifestTemplating renders template variables in Path/NewPath/Content and timestamps.
+// Sequence is 1-based and increments per operation in provided order.
+func applyManifestTemplating(ops []Operation) []Operation {
+	out := make([]Operation, 0, len(ops))
+	for i, op := range ops {
+		seq := i + 1
+		refTime := time.Now().UTC()
+		if t, err := time.Parse(time.RFC3339, strings.TrimSpace(op.Mtime)); err == nil {
+			refTime = t
+		}
+
+		// Render helper
+		render := func(s string) string {
+			if s == "" {
+				return s
+			}
+			x := s
+			// ${SEQ}
+			x = reSeqMan.ReplaceAllString(x, strconv.Itoa(seq))
+			// ${RND:N}
+			x = reRndMan.ReplaceAllStringFunc(x, func(m string) string {
+				parts := reRndMan.FindStringSubmatch(m)
+				if len(parts) != 3 {
+					return m
+				}
+				n, err := strconv.Atoi(parts[2])
+				if err != nil || n <= 0 {
+					n = 8
+				}
+				return util.GetRandomString(n)
+			})
+			// ${DATE:layout}
+			x = reDateMan.ReplaceAllStringFunc(x, func(m string) string {
+				parts := reDateMan.FindStringSubmatch(m)
+				if len(parts) != 2 {
+					return m
+				}
+				return refTime.Format(parts[1])
+			})
+			return x
+		}
+
+		// Apply to relevant fields
+		op.Path = render(op.Path)
+		op.NewPath = render(op.NewPath)
+		op.Content = render(op.Content)
+		op.Atime = render(op.Atime)
+		op.Mtime = render(op.Mtime)
+		op.Stream = render(op.Stream)
+		op.HostURL = render(op.HostURL)
+		op.ReferrerURL = render(op.ReferrerURL)
+
+		out = append(out, op)
+	}
+	return out
 }
 
 func executeOp(root string, op Operation) error {

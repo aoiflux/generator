@@ -1,72 +1,273 @@
 operations:
-  # Simple manifest for quick bulk file generation
-  # Generate a variety of file types in structured directories
+  # Bulk manifest for emulating same EXE and EML files across multiple computers
+  # Simulates consistent file deployment patterns across an enterprise environment
+
+  # === COMPUTER-01 ===
+  - action: create
+    type: dir
+    path: computer-01
 
   - action: create
     type: dir
-    path: documents
+    path: computer-01/program-files
 
   - action: create
     type: dir
-    path: logs
+    path: computer-01/mail
 
   - action: create
     type: dir
-    path: archives
+    path: computer-01/temp
 
+  # Consistent executable files across systems
   - action: create
-    type: dir
-    path: media
-
-  # Documents
-  - action: create
-    path: documents/report.txt
-    content_len: 512
-
-  - action: create
-    path: documents/data.csv
-    content_len: 256
-
-  - action: create
-    path: documents/config.json
-    content_len: 128
-
-  - action: create
-    path: documents/readme.md
-    content_len: 256
-
-  # Logs
-  - action: create
-    path: logs/app.log
-    content_len: 1024
-
-  - action: create
-    path: logs/access.jsonl
-    content_len: 512
-
-  - action: create
-    path: logs/system.syslog
-    content_len: 768
-
-  # Archives
-  - action: create
-    path: archives/backup.zip
+    path: computer-01/program-files/update-tool.exe
     content_len: 2048
+    mtime: "2024-10-15T09:30:00Z"
 
-  # Media
   - action: create
-    path: media/image.png
+    path: computer-01/program-files/system-monitor.exe
+    content_len: 4096
+    mtime: "2024-10-15T09:30:15Z"
+
+  - action: create
+    path: computer-01/temp/installer-${SEQ}.exe
+    content_len: 1536
+    mtime: "2024-10-15T10:15:00Z"
+
+  # Email files with consistent naming
+  - action: create
+    path: computer-01/mail/notification-001.eml
     content_len: 512
+    mtime: "2024-10-15T08:45:00Z"
 
   - action: create
-    path: media/video.mp4
-    content_len: 1024
-
-  # Windows artifacts
-  - action: create
-    path: artifacts/settings.reg
-    content_len: 256
+    path: computer-01/mail/alert-system.eml
+    content_len: 768
+    mtime: "2024-10-15T09:00:00Z"
 
   - action: create
-    path: artifacts/tool.exe
+    path: computer-01/mail/update-${SEQ}.eml
+    content_len: 384
+    mtime: "2024-10-15T11:30:00Z"
+
+  # === COMPUTER-02 ===
+  - action: create
+    type: dir
+    path: computer-02
+
+  - action: create
+    type: dir
+    path: computer-02/program-files
+
+  - action: create
+    type: dir
+    path: computer-02/mail
+
+  - action: create
+    type: dir
+    path: computer-02/temp
+
+  # Same executables with identical timestamps (coordinated deployment)
+  - action: create
+    path: computer-02/program-files/update-tool.exe
+    content_len: 2048
+    mtime: "2024-10-15T09:30:00Z"
+
+  - action: create
+    path: computer-02/program-files/system-monitor.exe
+    content_len: 4096
+    mtime: "2024-10-15T09:30:15Z"
+
+  - action: create
+    path: computer-02/temp/installer-${SEQ}.exe
+    content_len: 1536
+    mtime: "2024-10-15T10:15:00Z"
+
+  # Same email patterns
+  - action: create
+    path: computer-02/mail/notification-001.eml
     content_len: 512
+    mtime: "2024-10-15T08:45:00Z"
+
+  - action: create
+    path: computer-02/mail/alert-system.eml
+    content_len: 768
+    mtime: "2024-10-15T09:00:00Z"
+
+  - action: create
+    path: computer-02/mail/update-${SEQ}.eml
+    content_len: 384
+    mtime: "2024-10-15T11:30:00Z"
+
+  # === COMPUTER-03 ===
+  - action: create
+    type: dir
+    path: computer-03
+
+  - action: create
+    type: dir
+    path: computer-03/program-files
+
+  - action: create
+    type: dir
+    path: computer-03/mail
+
+  - action: create
+    type: dir
+    path: computer-03/temp
+
+  # Same executables (slightly delayed deployment)
+  - action: create
+    path: computer-03/program-files/update-tool.exe
+    content_len: 2048
+    mtime: "2024-10-15T09:31:00Z"
+
+  - action: create
+    path: computer-03/program-files/system-monitor.exe
+    content_len: 4096
+    mtime: "2024-10-15T09:31:15Z"
+
+  - action: create
+    path: computer-03/temp/installer-${SEQ}.exe
+    content_len: 1536
+    mtime: "2024-10-15T10:16:00Z"
+
+  # Same email patterns
+  - action: create
+    path: computer-03/mail/notification-001.eml
+    content_len: 512
+    mtime: "2024-10-15T08:45:00Z"
+
+  - action: create
+    path: computer-03/mail/alert-system.eml
+    content_len: 768
+    mtime: "2024-10-15T09:00:00Z"
+
+  - action: create
+    path: computer-03/mail/update-${SEQ}.eml
+    content_len: 384
+    mtime: "2024-10-15T11:30:00Z"
+
+  # === COMPUTER-04 ===
+  - action: create
+    type: dir
+    path: computer-04
+
+  - action: create
+    type: dir
+    path: computer-04/program-files
+
+  - action: create
+    type: dir
+    path: computer-04/mail
+
+  - action: create
+    type: dir
+    path: computer-04/temp
+
+  # Same executables
+  - action: create
+    path: computer-04/program-files/update-tool.exe
+    content_len: 2048
+    mtime: "2024-10-15T09:30:00Z"
+
+  - action: create
+    path: computer-04/program-files/system-monitor.exe
+    content_len: 4096
+    mtime: "2024-10-15T09:30:15Z"
+
+  - action: create
+    path: computer-04/temp/installer-${SEQ}.exe
+    content_len: 1536
+    mtime: "2024-10-15T10:15:30Z"
+
+  # Same email patterns
+  - action: create
+    path: computer-04/mail/notification-001.eml
+    content_len: 512
+    mtime: "2024-10-15T08:45:00Z"
+
+  - action: create
+    path: computer-04/mail/alert-system.eml
+    content_len: 768
+    mtime: "2024-10-15T09:00:00Z"
+
+  - action: create
+    path: computer-04/mail/update-${SEQ}.eml
+    content_len: 384
+    mtime: "2024-10-15T11:30:00Z"
+
+  # === COMPUTER-05 ===
+  - action: create
+    type: dir
+    path: computer-05
+
+  - action: create
+    type: dir
+    path: computer-05/program-files
+
+  - action: create
+    type: dir
+    path: computer-05/mail
+
+  - action: create
+    type: dir
+    path: computer-05/temp
+
+  # Same executables (final deployment wave)
+  - action: create
+    path: computer-05/program-files/update-tool.exe
+    content_len: 2048
+    mtime: "2024-10-15T09:32:00Z"
+
+  - action: create
+    path: computer-05/program-files/system-monitor.exe
+    content_len: 4096
+    mtime: "2024-10-15T09:32:15Z"
+
+  - action: create
+    path: computer-05/temp/installer-${SEQ}.exe
+    content_len: 1536
+    mtime: "2024-10-15T10:17:00Z"
+
+  # Same email patterns
+  - action: create
+    path: computer-05/mail/notification-001.eml
+    content_len: 512
+    mtime: "2024-10-15T08:45:00Z"
+
+  - action: create
+    path: computer-05/mail/alert-system.eml
+    content_len: 768
+    mtime: "2024-10-15T09:00:00Z"
+
+  - action: create
+    path: computer-05/mail/update-${SEQ}.eml
+    content_len: 384
+    mtime: "2024-10-15T11:30:00Z"
+
+  # === SHARED NETWORK LOCATION ===
+  - action: create
+    type: dir
+    path: network-share
+
+  - action: create
+    type: dir
+    path: network-share/deployment
+
+  # Source files that were distributed
+  - action: create
+    path: network-share/deployment/update-tool-master.exe
+    content_len: 2048
+    mtime: "2024-10-15T08:00:00Z"
+
+  - action: create
+    path: network-share/deployment/system-monitor-master.exe
+    content_len: 4096
+    mtime: "2024-10-15T08:00:15Z"
+
+  - action: create
+    path: network-share/deployment/email-template.eml
+    content_len: 512
+    mtime: "2024-10-15T07:30:00Z"

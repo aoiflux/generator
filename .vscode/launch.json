@@ -1,0 +1,70 @@
+{
+    "$schema": "vscode://schemas/launch",
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run: Manifest (basic)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--seed",
+                "42",
+                "--manifest",
+                "examples/manifest-bulk-simple.yaml",
+                "--timeline",
+                "timeline.csv",
+                "out-manifest"
+            ]
+        },
+        {
+            "name": "Run: Playbook (basic)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--seed",
+                "100",
+                "--playbook",
+                "examples/playbook-basic.yaml",
+                "--timeline",
+                "playbook-timeline.csv",
+                "out-playbook"
+            ]
+        },
+        {
+            "name": "Run: Ransomware (comprehensive)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--seed",
+                "999",
+                "--playbook",
+                "examples/playbook-comprehensive-ransomware.yaml",
+                "--timeline",
+                "ransomware.csv",
+                "ransomware-scene"
+            ]
+        },
+        {
+            "name": "Run: Malware lifecycle + MACB",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--seed",
+                "12345",
+                "--playbook",
+                "examples/playbook-malware-lifecycle.yaml",
+                "--timeline",
+                "apt.macb",
+                "apt-scene"
+            ]
+        }
+    ]
+}
