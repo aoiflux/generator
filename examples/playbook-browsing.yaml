@@ -1,0 +1,34 @@
+start: "2023-10-30T10:00:00Z"
+actors:
+  - name: user1
+    base: Users/User1/AppData/Local/Google/Chrome/User Data
+    variables:
+      browser: chrome
+
+  - name: user2
+    base: Users/User2/AppData/Roaming/Mozilla/Firefox/Profiles
+    variables:
+      browser: firefox
+
+steps:
+  - actor: user1
+    offset: 1h
+    actions:
+      - action: create
+        path: Default/History
+        ext: .sqlite
+        content_template: history
+        variables:
+          domain: example.com
+          search: product research
+
+  - actor: user2
+    offset: 2h
+    actions:
+      - action: create
+        path: default/places
+        ext: .sqlite
+        content_template: history
+        variables:
+          domain: mozilla.org
+          search: developer docs

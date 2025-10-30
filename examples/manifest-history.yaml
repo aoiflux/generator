@@ -1,0 +1,14 @@
+operations:
+  - action: create
+    path: Chrome/Default/History
+    ext: .sqlite
+    content_template: history
+    mtime: "2023-10-30T14:00:00Z"
+    atime: "2023-10-30T14:30:00Z"
+
+  - action: create
+    path: Firefox/Profiles/default/places
+    ext: .sqlite
+    content_template: history
+    mtime: "2023-10-30T15:00:00Z"
+    atime: "2023-10-30T15:30:00Z"
