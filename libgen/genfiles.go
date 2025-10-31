@@ -421,7 +421,7 @@ func generateFirefoxPlaces(basedir string, channeledErr chan error) {
     for i := 1; i <= 5; i++ {
         url := fmt.Sprintf("https://mozilla.example/%d/%s", i, util.GetRandomString(6))
         title := "Mozilla " + util.GetRandomString(4)
-        lastVisit := now.Add(time.Duration(i) * time.Minute).Unix() 
+        lastVisit := now.Add(-time.Duration(i) * time.Minute).Unix() 
         if _, err := db.Exec(`INSERT INTO moz_places (id, url, title, visit_count, typed, last_visit_date) VALUES (?, ?, ?, ?, ?, ?)`, i, url, title, i*3, i%2, lastVisit); err != nil {
             channeledErr <- err
             return
