@@ -37,9 +37,11 @@ const (
 	MdExtension     = ".md"
 	SyslogExtension = ".syslog"
 	ExeExtension    = ".exe"
+	DbExtension	 	= ".db"
+	SqLiteExtension = ".sqlite"
 )
 
 var MaxThreadCount = runtime.NumCPU() * 2
 
 // Number of file types generated per iteration in libgen
-const NumFileTypes int64 = 18
+const NumFileTypes int64 = 19
