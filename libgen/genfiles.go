@@ -2,6 +2,7 @@ package libgen
 
 import (
 	"archive/zip"
+	"database/sql"
 	"fmt"
 	"generator/constant"
 	"generator/util"
@@ -13,11 +14,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"database/sql"
 
-	_ "github.com/glebarez/sqlite"
 	"github.com/abema/go-mp4"
 	"github.com/gingfrederik/docx"
+	_ "github.com/glebarez/sqlite"
 	"github.com/jung-kurt/gofpdf"
 )
 
@@ -327,7 +327,6 @@ func generateMbox(basedir string, channeledErr chan error) {
 	channeledErr <- os.WriteFile(p, []byte(b.String()), os.ModePerm)
 }
 
-
 func generateChromeHistory(basedir string, channeledErr chan error) {
 	p := util.GetFilePath(basedir, constant.DbExtension)
 	db, err := sql.Open("sqlite", p)
@@ -353,7 +352,7 @@ func generateChromeHistory(basedir string, channeledErr chan error) {
 		from_visit INTEGER,
 		transition INTEGER
 	);`,
-}
+	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
 			channeledErr <- err
@@ -361,39 +360,36 @@ func generateChromeHistory(basedir string, channeledErr chan error) {
 		}
 	}
 	now := time.Now().UTC()
-	for i :=1; i<=5; i++ {
+	for i := 1; i <= 5; i++ {
 		url := fmt.Sprintf("https://example.com/%d/%s", i, util.GetRandomString(6))
-		title :="Example " + util.GetRandomString(6)
+		title := "Example " + util.GetRandomString(6)
 		lastVisit := now.Add(-time.Duration(i) * time.Minute).Unix()
-		
-		if _, err := db.Exec(`INSERT INTO urls(url, title, visit_count, typed_count, last_visit_time) VALUES(?,?,?,?,?)`,url, title, i*10, i*2, lastVisit); 
-		err != nil {
+
+		if _, err := db.Exec(`INSERT INTO urls(url, title, visit_count, typed_count, last_visit_time) VALUES(?,?,?,?,?)`, url, title, i*10, i*2, lastVisit); err != nil {
 			channeledErr <- err
 			return
 		}
 
-		if _, err := db.Exec(`INSERT INTO visits(url, visit_time, from_visit, transition) VALUES(?,?,?,?)`, i, lastVisit, 0, 0);
-		err != nil {
+		if _, err := db.Exec(`INSERT INTO visits(url, visit_time, from_visit, transition) VALUES(?,?,?,?)`, i, lastVisit, 0, 0); err != nil {
 			channeledErr <- err
 			return
 		}
 	}
 
-	channeledErr <- nil	
+	channeledErr <- nil
 }
 
-
 func generateFirefoxPlaces(basedir string, channeledErr chan error) {
-    p := filepath.Join(basedir, "places_"+util.GetRandomString(6)+constant.SqLiteExtension)
-    db, err := sql.Open("sqlite", p)
-    if err != nil {
-        channeledErr <- err
-        return
-    }
-    defer db.Close()
+	p := filepath.Join(basedir, "places_"+util.GetRandomString(6)+constant.SqLiteExtension)
+	db, err := sql.Open("sqlite", p)
+	if err != nil {
+		channeledErr <- err
+		return
+	}
+	defer db.Close()
 
-    stmts := []string{
-        `CREATE TABLE IF NOT EXISTS moz_places (
+	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS moz_places (
             id INTEGER PRIMARY KEY,
             url TEXT,
             title TEXT,
@@ -403,34 +399,34 @@ func generateFirefoxPlaces(basedir string, channeledErr chan error) {
             typed INTEGER,
             last_visit_date INTEGER
         );`,
-        `CREATE TABLE IF NOT EXISTS moz_historyvisits (
+		`CREATE TABLE IF NOT EXISTS moz_historyvisits (
             id INTEGER PRIMARY KEY,
             place_id INTEGER,
             visit_date INTEGER,
             from_visit INTEGER
         );`,
-    }
-    for _, s := range stmts {
-        if _, err := db.Exec(s); err != nil {
-            channeledErr <- err
-            return
-        }
-    }
+	}
+	for _, s := range stmts {
+		if _, err := db.Exec(s); err != nil {
+			channeledErr <- err
+			return
+		}
+	}
 
-    now := time.Now().UTC()
-    for i := 1; i <= 5; i++ {
-        url := fmt.Sprintf("https://mozilla.example/%d/%s", i, util.GetRandomString(6))
-        title := "Mozilla " + util.GetRandomString(4)
-        lastVisit := now.Add(-time.Duration(i) * time.Minute).Unix() 
-        if _, err := db.Exec(`INSERT INTO moz_places (id, url, title, visit_count, typed, last_visit_date) VALUES (?, ?, ?, ?, ?, ?)`, i, url, title, i*3, i%2, lastVisit); err != nil {
-            channeledErr <- err
-            return
-        }
-        if _, err := db.Exec(`INSERT INTO moz_historyvisits (id, place_id, visit_date, from_visit) VALUES (?, ?, ?, ?)`, i, i, lastVisit, 0); err != nil {
-            channeledErr <- err
-            return
-        }
-    }
+	now := time.Now().UTC()
+	for i := 1; i <= 5; i++ {
+		url := fmt.Sprintf("https://mozilla.example/%d/%s", i, util.GetRandomString(6))
+		title := "Mozilla " + util.GetRandomString(4)
+		lastVisit := now.Add(-time.Duration(i) * time.Minute).Unix()
+		if _, err := db.Exec(`INSERT INTO moz_places (id, url, title, visit_count, typed, last_visit_date) VALUES (?, ?, ?, ?, ?, ?)`, i, url, title, i*3, i%2, lastVisit); err != nil {
+			channeledErr <- err
+			return
+		}
+		if _, err := db.Exec(`INSERT INTO moz_historyvisits (id, place_id, visit_date, from_visit) VALUES (?, ?, ?, ?)`, i, i, lastVisit, 0); err != nil {
+			channeledErr <- err
+			return
+		}
+	}
 
-    channeledErr <- nil
+	channeledErr <- nil
 }
