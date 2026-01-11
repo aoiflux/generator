@@ -279,3 +279,27 @@ Intended use:
 Notes:
 - Output size grows quickly with `--bulk` and `--depth`. Start small (e.g., `--bulk 2 --depth 1` or `--bulk 3 --depth 2`).
 - Bulk mode is structure/content focused; if you need precise timelines, actors, or conditions, prefer Playbooks.
+- 
+
+### Related Research Paper
+https://link.springer.com/chapter/10.1007/978-981-96-9443-3_17
+
+### Recommended Citation
+@InProceedings{10.1007/978-981-96-9443-3_17,
+author="Gogia, Gaurav
+and Rughani, Parag",
+editor="Gohil, Bhavesh N.
+and Patel, Sankita J.
+and Chaudhary, Naveen Kumar
+and Iyengar, S. S.
+and Modi, Chirag
+and Padhya, Mukti",
+title="File System Artefacts Generator (FSAGen): Towards Faster Forensic Tool Testing",
+booktitle="Information Security, Privacy and Digital Forensics",
+year="2026",
+publisher="Springer Nature Singapore",
+address="Singapore",
+pages="239--248",
+abstract="Software testing is one of the most fundamental steps in any software development lifecycle. The larger the scale, the more testing is required to ensure the correctness and reliability of the software. In the case of digital forensics, one of the main problems that researchers face is the availability of datasets for testing the reliability of the product they are evaluating. Different forensic tools with similar features may present different results even with similar inputs. This makes it extremely important to have standardised and reproducible datasets. This research explores synthetic dataset generators and introduces a novel command-line interface (CLI) tool for generating file system artefacts. The tool aims to facilitate the quick and convenient creation of synthetic datasets to aid in the validation of file system forensic tools. By offering a simplified and cross-platform solution, this tool addresses the need for standardised datasets in digital forensics research and enhances the reliability and accuracy of forensic tool evaluations.",
+isbn="978-981-96-9443-3"
+}
