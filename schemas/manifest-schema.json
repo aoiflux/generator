@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "Operation": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rename"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "new_path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rotate"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "new_path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "ads"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "stream"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "motw"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "zone_id": {
+                "maximum": 4,
+                "minimum": 0,
+                "type": "integer"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/OperationAction"
+        },
+        "atime": {
+          "$ref": "#/$defs/Rfc3339Time"
+        },
+        "content": {
+          "type": "string"
+        },
+        "content_len": {
+          "type": "integer"
+        },
+        "ext": {
+          "type": "string"
+        },
+        "host_url": {
+          "type": "string"
+        },
+        "mtime": {
+          "$ref": "#/$defs/Rfc3339Time"
+        },
+        "new_path": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "referrer_url": {
+          "type": "string"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "file",
+            "dir"
+          ],
+          "type": "string"
+        },
+        "zone_id": {
+          "maximum": 4,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "action",
+        "path"
+      ],
+      "type": "object"
+    },
+    "OperationAction": {
+      "enum": [
+        "create",
+        "update",
+        "append",
+        "delete",
+        "mace",
+        "rename",
+        "truncate",
+        "rotate",
+        "ads",
+        "motw"
+      ],
+      "type": "string"
+    },
+    "Rfc3339Time": {
+      "description": "Timestamp in RFC3339 format",
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "$id": "https://generator.local/manifest-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Validates fsagen manifest input files.",
+  "properties": {
+    "operations": {
+      "items": {
+        "$ref": "#/$defs/Operation"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "operations"
+  ],
+  "title": "FSAGen Manifest Schema",
+  "type": "object"
+}

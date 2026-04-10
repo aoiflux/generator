@@ -32,11 +32,27 @@ fsagen [OPTIONS] <output-path>
 - `--seed N` - PRNG seed for deterministic generation (default: 1)
 - `--manifest FILE` - Execute a YAML manifest (simple file operations)
 - `--playbook FILE` - Execute a YAML playbook (complex modus operandi)
+- `--generate-schema` - Write separate JSON schemas for manifest/playbook and exit
+- `--schema-out DIR` - Output directory for `--generate-schema` (default: `examples`)
 - `--bulk N` - Super-simple bulk generation: N items per level (no YAML)
 - `--depth D` - Bulk generation depth (default: 1)
 - `--timeline FILE` - Generate forensic timeline after execution (formats: csv, txt, bodyfile, macb)
 
 **Examples:**
+
+Generate schema file for external input validation:
+```pwsh
+fsagen --generate-schema
+```
+
+This writes:
+- `manifest-schema.json`
+- `playbook-schema.json`
+
+Generate schema to a custom location:
+```pwsh
+fsagen --generate-schema --schema-out ./schemas
+```
 
 Simple bulk generation with manifest:
 ```pwsh

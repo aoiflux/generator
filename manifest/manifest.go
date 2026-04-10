@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"fmt"
+	"generator/spec"
 	"generator/util"
 	"io/fs"
 	"os"
@@ -14,29 +15,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Manifest describes a set of operations to apply under a root directory.
-type Manifest struct {
-	Operations []Operation `yaml:"operations"`
-}
-
-// Operation represents a single action.
-// Actions: create, update, delete, mace, rename
-type Operation struct {
-	Action     string `yaml:"action"`
-	Path       string `yaml:"path"`        // required for all except when action is none
-	NewPath    string `yaml:"new_path"`    // for rename
-	Type       string `yaml:"type"`        // for create: file|dir
-	Ext        string `yaml:"ext"`         // for create file when path is a directory
-	Content    string `yaml:"content"`     // optional literal content
-	ContentLen int    `yaml:"content_len"` // if Content empty, generate deterministic random of this length
-	Atime      string `yaml:"atime"`       // RFC3339; for mace/update/create/delete(dir times)
-	Mtime      string `yaml:"mtime"`       // RFC3339
-	// Windows-only extras
-	Stream      string `yaml:"stream"`       // for ads: stream name (e.g., Zone.Identifier)
-	ZoneID      int    `yaml:"zone_id"`      // for motw: ZoneId value (0-4)
-	HostURL     string `yaml:"host_url"`     // for motw
-	ReferrerURL string `yaml:"referrer_url"` // for motw
-}
+type Manifest = spec.Manifest
+type Operation = spec.Operation
 
 // ExecuteManifest reads a YAML manifest file and applies operations under root.
 func ExecuteManifest(root string, manifestPath string) error {
@@ -49,12 +29,12 @@ func ExecuteManifest(root string, manifestPath string) error {
 		return fmt.Errorf("parse manifest: %w", err)
 	}
 	// Apply simple templating to operations before execution
-	ops := m.operationsSequential()
+	ops := operationsSequential(m)
 	ops = applyManifestTemplating(ops)
 	return ExecuteOperations(root, ops)
 }
 
-func (m Manifest) operationsSequential() []Operation {
+func operationsSequential(m Manifest) []Operation {
 	// already sequential; in future may support groups
 	return m.Operations
 }

@@ -6,6 +6,7 @@ import (
 	libgenpkg "generator/libgen"
 	manifestpkg "generator/manifest"
 	playbookpkg "generator/playbook"
+	schemapkg "generator/schema"
 	timelinepkg "generator/timeline"
 	"generator/util"
 	"io/fs"
@@ -18,11 +19,23 @@ func main() {
 	seed := flag.Int64("seed", 1, "PRNG seed for deterministic generation")
 	manifestPath := flag.String("manifest", "", "Path to a YAML manifest that defines specific artifacts and actions")
 	playbookPath := flag.String("playbook", "", "Path to a YAML playbook that describes a modus operandi (high-level timeline)")
+	generateSchema := flag.Bool("generate-schema", false, "Write separate JSON schemas for manifest/playbook inputs and exit")
+	schemaOut := flag.String("schema-out", "examples", "Output directory for --generate-schema")
 	// Super-simple bulk generation (no manifest/playbook): generate a bunch of files
 	bulkLimit := flag.Int("bulk", 0, "Bulk generation: number of items per level (no manifest/playbook)")
 	bulkDepth := flag.Int("depth", 1, "Bulk generation: directory depth (default 1)")
 	timelineOutput := flag.String("timeline", "", "Generate forensic timeline after execution (formats: csv, txt, bodyfile, macb)")
 	flag.Parse()
+
+	if *generateSchema {
+		manifestOut, playbookOut, err := writeInputSchemas(*schemaOut)
+		if err != nil {
+			handle(err)
+		}
+		fmt.Printf("Manifest schema written to: %s\n", manifestOut)
+		fmt.Printf("Playbook schema written to: %s\n", playbookOut)
+		return
+	}
 
 	args := flag.Args()
 	if len(args) < 1 {
@@ -94,6 +107,8 @@ func printUsage() {
 	fmt.Println("  --seed N           PRNG seed for deterministic generation (default: 1)")
 	fmt.Println("  --manifest FILE    Execute a YAML manifest (simple file operations)")
 	fmt.Println("  --playbook FILE    Execute a YAML playbook (complex modus operandi)")
+	fmt.Println("  --generate-schema  Write separate JSON schemas (manifest/playbook) and exit")
+	fmt.Println("  --schema-out DIR   Output directory for --generate-schema (default: examples)")
 	fmt.Println("  --bulk N           Super-simple bulk generation: N items per level (no manifest/playbook)")
 	fmt.Println("  --depth D          Bulk generation depth (default: 1)")
 	fmt.Println("  --timeline FILE    Generate forensic timeline after execution")
@@ -109,6 +124,8 @@ func printUsage() {
 	fmt.Println("  .macb              MACB timeline format")
 	fmt.Println()
 	fmt.Println("Examples:")
+	fmt.Println("  fsagen --generate-schema")
+	fmt.Println("  fsagen --generate-schema --schema-out ./schemas")
 	fmt.Println("  fsagen --seed 42 --manifest basic.yaml ./output")
 	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml ./crime-scene")
 	fmt.Println("  fsagen --seed 100 --playbook adversary.yaml --timeline timeline.csv ./output")
@@ -181,4 +198,36 @@ func handle(err error) {
 		fmt.Printf("\n\n%v\n\n", err)
 		os.Exit(1)
 	}
+}
+
+func writeInputSchemas(outputDir string) (string, string, error) {
+	if strings.TrimSpace(outputDir) == "" {
+		return "", "", fmt.Errorf("schema output directory cannot be empty")
+	}
+	if strings.EqualFold(filepath.Ext(outputDir), ".json") {
+		outputDir = filepath.Dir(outputDir)
+	}
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return "", "", fmt.Errorf("prepare schema output directory: %w", err)
+	}
+
+	manifestPath := filepath.Join(outputDir, "manifest-schema.json")
+	playbookPath := filepath.Join(outputDir, "playbook-schema.json")
+
+	manifestSchema, err := schemapkg.BuildManifestSchema()
+	if err != nil {
+		return "", "", fmt.Errorf("build manifest schema: %w", err)
+	}
+	playbookSchema, err := schemapkg.BuildPlaybookSchema()
+	if err != nil {
+		return "", "", fmt.Errorf("build playbook schema: %w", err)
+	}
+
+	if err := os.WriteFile(manifestPath, manifestSchema, 0o644); err != nil {
+		return "", "", fmt.Errorf("write manifest schema: %w", err)
+	}
+	if err := os.WriteFile(playbookPath, playbookSchema, 0o644); err != nil {
+		return "", "", fmt.Errorf("write playbook schema: %w", err)
+	}
+	return manifestPath, playbookPath, nil
 }

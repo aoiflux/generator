@@ -1,0 +1,262 @@
+{
+  "$defs": {
+    "Action": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rename"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "new_path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rotate"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "new_path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "ads"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "stream"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/OperationAction"
+        },
+        "atime": {
+          "$ref": "#/$defs/Rfc3339Time"
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "content": {
+          "type": "string"
+        },
+        "content_len": {
+          "type": "integer"
+        },
+        "ext": {
+          "type": "string"
+        },
+        "host_url": {
+          "type": "string"
+        },
+        "mtime": {
+          "$ref": "#/$defs/Rfc3339Time"
+        },
+        "new_path": {
+          "type": "string"
+        },
+        "offset": {
+          "description": "Go duration string (for example: 15m, 2h, 30s)",
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "referrer_url": {
+          "type": "string"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "template": {
+          "$ref": "#/$defs/Template"
+        },
+        "type": {
+          "enum": [
+            "file",
+            "dir"
+          ],
+          "type": "string"
+        },
+        "zone_id": {
+          "maximum": 4,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "action",
+        "path"
+      ],
+      "type": "object"
+    },
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "variables": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "Condition": {
+      "enum": [
+        "",
+        "odd",
+        "even",
+        "first",
+        "last"
+      ],
+      "type": "string"
+    },
+    "OperationAction": {
+      "enum": [
+        "create",
+        "update",
+        "append",
+        "delete",
+        "mace",
+        "rename",
+        "truncate",
+        "rotate",
+        "ads",
+        "motw"
+      ],
+      "type": "string"
+    },
+    "Rfc3339Time": {
+      "description": "Timestamp in RFC3339 format",
+      "format": "date-time",
+      "type": "string"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "$ref": "#/$defs/Action"
+          },
+          "type": "array"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "batch_count": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "every": {
+          "description": "Go duration string",
+          "type": "string"
+        },
+        "offset": {
+          "description": "Go duration string",
+          "type": "string"
+        },
+        "repeat": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "actor",
+        "actions"
+      ],
+      "type": "object"
+    },
+    "Template": {
+      "enum": [
+        "email",
+        "log",
+        "script",
+        "doc"
+      ],
+      "type": "string"
+    }
+  },
+  "$id": "https://generator.local/playbook-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Validates fsagen playbook input files.",
+  "properties": {
+    "actors": {
+      "items": {
+        "$ref": "#/$defs/Actor"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "start": {
+      "oneOf": [
+        {
+          "const": "now"
+        },
+        {
+          "$ref": "#/$defs/Rfc3339Time"
+        }
+      ]
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/Step"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "variables": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    }
+  },
+  "required": [
+    "actors",
+    "steps"
+  ],
+  "title": "FSAGen Playbook Schema",
+  "type": "object"
+}

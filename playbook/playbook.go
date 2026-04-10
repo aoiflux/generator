@@ -3,6 +3,7 @@ package playbook
 import (
 	"fmt"
 	manifestpkg "generator/manifest"
+	"generator/spec"
 	"generator/util"
 	"os"
 	"regexp"
@@ -13,51 +14,10 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type Playbook struct {
-	// Start time for the playbook, RFC3339 or "now"
-	Start     string            `yaml:"start"`
-	Variables map[string]string `yaml:"variables"` // Global variables for templating
-	Actors    []Actor           `yaml:"actors"`
-	Steps     []Step            `yaml:"steps"`
-}
-
-type Actor struct {
-	Name      string            `yaml:"name"`
-	Base      string            `yaml:"base"`      // base directory under root for this actor
-	Variables map[string]string `yaml:"variables"` // Actor-specific variables
-}
-
-type Step struct {
-	Actor      string   `yaml:"actor"`
-	Offset     string   `yaml:"offset"` // duration from playbook start for first iteration
-	Every      string   `yaml:"every"`  // repeat interval
-	Repeat     int      `yaml:"repeat"`
-	Condition  string   `yaml:"condition"`   // Conditional execution: "odd", "even", "first", "last"
-	BatchCount int      `yaml:"batch_count"` // Generate N files in this step
-	Actions    []Action `yaml:"actions"`
-}
-
-// Action mirrors manifest Operation but supports a relative time offset and templating in fields
-type Action struct {
-	Action     string `yaml:"action"`
-	Path       string `yaml:"path"`
-	NewPath    string `yaml:"new_path"`
-	Type       string `yaml:"type"`
-	Ext        string `yaml:"ext"`
-	Content    string `yaml:"content"`
-	ContentLen int    `yaml:"content_len"`
-	Template   string `yaml:"template"`  // Predefined template: "email", "log", "script", "doc"
-	Offset     string `yaml:"offset"`    // relative to step occurrence time
-	Condition  string `yaml:"condition"` // Action-level condition
-	// Optional explicit times override the computed time when provided
-	Atime string `yaml:"atime"`
-	Mtime string `yaml:"mtime"`
-	// Windows-only extras (from manifest Operation)
-	Stream      string `yaml:"stream"`
-	ZoneID      int    `yaml:"zone_id"`
-	HostURL     string `yaml:"host_url"`
-	ReferrerURL string `yaml:"referrer_url"`
-}
+type Playbook = spec.Playbook
+type Actor = spec.Actor
+type Step = spec.Step
+type Action = spec.Action
 
 // ExecutePlaybook loads a playbook YAML and executes compiled operations under root.
 func ExecutePlaybook(root string, path string) error {
@@ -69,7 +29,7 @@ func ExecutePlaybook(root string, path string) error {
 	if err := yaml.Unmarshal(data, &pb); err != nil {
 		return fmt.Errorf("parse playbook: %w", err)
 	}
-	ops, err := pb.compile(root)
+	ops, err := compilePlaybook(pb, root)
 	if err != nil {
 		return err
 	}
@@ -81,7 +41,7 @@ func ExecutePlaybook(root string, path string) error {
 }
 
 // compile playbook into concrete manifest operations with resolved times and paths
-func (p Playbook) compile(root string) ([]manifestpkg.Operation, error) {
+func compilePlaybook(p Playbook, root string) ([]manifestpkg.Operation, error) {
 	startTime := time.Now().UTC()
 	if strings.TrimSpace(p.Start) != "" && strings.ToLower(p.Start) != "now" {
 		t, err := time.Parse(time.RFC3339, p.Start)
