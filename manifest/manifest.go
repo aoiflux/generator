@@ -2,8 +2,8 @@ package manifest
 
 import (
 	"fmt"
-	"generator/spec"
-	"generator/util"
+	"fsagen/spec"
+	"fsagen/util"
 	"io/fs"
 	"os"
 	"path/filepath"

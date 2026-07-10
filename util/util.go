@@ -4,7 +4,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
-	"generator/constant"
+	"fsagen/constant"
 	"math/rand"
 	"os"
 	"path/filepath"

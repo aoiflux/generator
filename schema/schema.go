@@ -3,7 +3,7 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"generator/spec"
+	"fsagen/spec"
 	"reflect"
 	"strings"
 )

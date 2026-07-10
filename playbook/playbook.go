@@ -2,9 +2,9 @@ package playbook
 
 import (
 	"fmt"
-	manifestpkg "generator/manifest"
-	"generator/spec"
-	"generator/util"
+	manifestpkg "fsagen/manifest"
+	"fsagen/spec"
+	"fsagen/util"
 	"os"
 	"regexp"
 	"strconv"
